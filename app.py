@@ -1154,12 +1154,9 @@ def health():
 
 
 @app.route("/debug/subscriptions")
+@login_required
 def debug_subscriptions():
-    """
-    Lista TODAS las suscripciones visibles al SP con su quotaId real.
-    Útil para diagnosticar por qué el auto-discovery no encuentra subs.
-    Elimina esta ruta en producción.
-    """
+    """Lista suscripciones visibles al SP — solo para usuarios autenticados."""
     try:
         credential = DefaultAzureCredential()
         sub_client = SubscriptionClient(credential)
