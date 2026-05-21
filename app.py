@@ -49,28 +49,26 @@ log = logging.getLogger(__name__)
 # SSO con MSAL (Microsoft Authentication Library)
 # ---------------------------------------------------------------------------
 
-_TENANT_ID     = os.environ.get("AZURE_TENANT_ID", "")
-_CLIENT_ID     = os.environ.get("AZURE_CLIENT_ID", "")
-_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET", "")
-_AUTHORITY     = f"https://login.microsoftonline.com/{_TENANT_ID}"
-_SCOPES        = ["User.Read"]
-_REDIRECT_PATH = "/auth/callback"
-
-# SSO activo solo si hay credenciales de Entra ID configuradas
-SSO_ENABLED = bool(_TENANT_ID and _CLIENT_ID and _CLIENT_SECRET)
+def _sso_enabled() -> bool:
+    """Comprueba en runtime si SSO está configurado."""
+    return bool(
+        os.environ.get("AZURE_TENANT_ID") and
+        os.environ.get("AZURE_CLIENT_ID") and
+        os.environ.get("AZURE_CLIENT_SECRET")
+    )
 
 
 def _get_msal_app() -> msal.ConfidentialClientApplication:
     return msal.ConfidentialClientApplication(
-        _CLIENT_ID,
-        authority=_AUTHORITY,
-        client_credential=_CLIENT_SECRET,
+        os.environ.get("AZURE_CLIENT_ID", ""),
+        authority=f"https://login.microsoftonline.com/{os.environ.get('AZURE_TENANT_ID', '')}",
+        client_credential=os.environ.get("AZURE_CLIENT_SECRET", ""),
     )
 
 
 def _get_current_user() -> dict:
     """Devuelve el usuario de la sesión o un usuario anónimo si SSO está desactivado."""
-    if not SSO_ENABLED:
+    if not _sso_enabled():
         return {"name": "Dev User", "email": "", "authenticated": False}
     user = session.get("user")
     if user:
@@ -82,7 +80,7 @@ def login_required(f):
     """Decorador que redirige al login si el usuario no está autenticado."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if SSO_ENABLED and not session.get("user"):
+        if _sso_enabled() and not session.get("user"):
             session["next_url"] = request.url
             return redirect(url_for("login"))
         return f(*args, **kwargs)
@@ -91,7 +89,7 @@ def login_required(f):
 
 @app.route("/login")
 def login():
-    if not SSO_ENABLED:
+    if not _sso_enabled():
         return redirect(url_for("overview"))
     session["state"] = str(uuid.uuid4())
     auth_url = _get_msal_app().get_authorization_request_url(
@@ -139,7 +137,7 @@ def logout():
 
 @app.context_processor
 def inject_user():
-    return {"current_user": _get_current_user(), "sso_enabled": SSO_ENABLED}
+    return {"current_user": _get_current_user(), "sso_enabled": _sso_enabled()}
 
 
 # ---------------------------------------------------------------------------
