@@ -53,6 +53,10 @@ log = logging.getLogger(__name__)
 # SSO con MSAL (Microsoft Authentication Library)
 # ---------------------------------------------------------------------------
 
+_SCOPES        = ["User.Read"]
+_REDIRECT_PATH = "/auth/callback"
+
+
 def _sso_enabled() -> bool:
     """Comprueba en runtime si SSO está configurado."""
     return bool(
