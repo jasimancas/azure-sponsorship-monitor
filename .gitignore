@@ -1,0 +1,33 @@
+# Secretos — NUNCA en Git
+.env
+*.env.local
+
+# Overrides locales de suscripciones (nombres, budgets)
+subscriptions.local.json
+subscriptions.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+venv/
+.venv/
+env/
+*.egg-info/
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+tfplan
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp

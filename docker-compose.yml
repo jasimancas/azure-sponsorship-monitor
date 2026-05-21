@@ -1,0 +1,23 @@
+# docker-compose.yml — entorno local de desarrollo
+# Uso: docker compose up
+#
+# Crea un .env copiando .env.example y rellena tus credenciales
+# Crea subscriptions.local.json (opcional) para nombres y budgets custom
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./app.py:/app/app.py:ro
+      - ./templates:/app/templates:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

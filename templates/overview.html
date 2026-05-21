@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Sponsorship Monitor — Overview</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --azure: #0078d4;
+    --azure-dark: #005a9e;
+    --azure-light: #e8f4ff;
+    --green: #107c10;
+    --amber: #ff8c00;
+    --red: #d13438;
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --border: #e1e4e8;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* ── Top nav ── */
+  .navbar {
+    background: var(--azure);
+    color: #fff;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 52px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  }
+  .navbar .brand { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+  .navbar .nav-links { display: flex; gap: 4px; margin-left: auto; }
+  .navbar .nav-links a {
+    color: rgba(255,255,255,.85);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: background .15s;
+  }
+  .navbar .nav-links a:hover,
+  .navbar .nav-links a.active { background: rgba(255,255,255,.2); color: #fff; }
+
+  /* ── Layout ── */
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px 20px; }
+
+  /* ── Controls bar ── */
+  .controls {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 24px;
+  }
+  .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-group label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .ctrl-group input, .ctrl-group select {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 13px;
+    background: #fff;
+    color: var(--text);
+  }
+  .btn {
+    padding: 8px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--azure); color: #fff; }
+  .btn-secondary { background: var(--border); color: var(--text); }
+
+  /* ── Alert ── */
+  .alert {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .alert-error   { background: #fde8e8; border: 1px solid #f8a5a5; color: #c0392b; }
+  .alert-warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; }
+  .alert-info    { background: var(--azure-light); border: 1px solid #90caf9; color: var(--azure-dark); }
+
+  /* ── KPI strip ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .kpi-card .kpi-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .kpi-card .kpi-value { font-size: 28px; font-weight: 700; color: var(--azure); }
+  .kpi-card .kpi-sub   { font-size: 12px; color: var(--muted); }
+
+  /* ── Comparison chart ── */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 28px;
+  }
+  .chart-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+  .chart-wrap { position: relative; height: 280px; }
+
+  /* ── Sub cards grid ── */
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .badge {
+    background: var(--azure);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+  .sub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 18px;
+  }
+  .sub-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: box-shadow .15s;
+  }
+  .sub-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+  .sub-card .card-header {
+    padding: 14px 16px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+  }
+  .sub-card .sub-name { font-size: 14px; font-weight: 700; }
+  .sub-card .sub-id   { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: monospace; }
+  .sub-card .tags     { display: flex; gap: 4px; flex-wrap: wrap; }
+  .sub-card .tag {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 99px;
+    background: var(--azure-light);
+    color: var(--azure-dark);
+    font-weight: 600;
+  }
+  .sub-card .card-body { padding: 14px 16px; }
+  .sub-card .cost-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .sub-card .cost-main {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--azure);
+  }
+  .sub-card .cost-label { font-size: 11px; color: var(--muted); }
+  .sub-card .cost-avg   { font-size: 13px; color: var(--muted); }
+
+  /* Budget bar */
+  .budget-row { margin-bottom: 12px; }
+  .budget-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .progress-bg { background: #e5e7eb; border-radius: 99px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; transition: width .3s; }
+  .pct-ok    { background: var(--green); }
+  .pct-warn  { background: var(--amber); }
+  .pct-over  { background: var(--red); }
+
+  /* Mini chart */
+  .mini-chart-wrap { position: relative; height: 70px; margin-bottom: 12px; }
+
+  /* Top services */
+  .top-services { border-top: 1px solid var(--border); padding-top: 10px; }
+  .top-services .ts-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .ts-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+  .ts-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+  .ts-cost { font-weight: 600; color: var(--azure-dark); }
+
+  /* Error card */
+  .sub-card .card-error {
+    padding: 16px;
+    background: #fde8e8;
+    color: #c0392b;
+    font-size: 12px;
+  }
+
+  /* Drill-down link */
+  .drilldown-link {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--azure);
+    text-decoration: none;
+    border-top: 1px solid var(--border);
+    background: var(--azure-light);
+  }
+  .drilldown-link:hover { background: #d0e9ff; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+  footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <span class="brand">☁ Azure Sponsorship Monitor</span>
+  <div class="nav-links">
+    <a href="/overview" class="active">Overview</a>
+    {% if subscriptions %}
+    <a href="/detail?sub={{ subscriptions[0].id }}">Detalle</a>
+    {% endif %}
+  </div>
+  {% if current_user.authenticated %}
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.25);
+                display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;color:#fff;">
+      {{ current_user.name[:1].upper() if current_user.name else '?' }}
+    </div>
+    <span style="font-size:.8rem;color:rgba(255,255,255,.85);">{{ current_user.name }}</span>
+    <a href="/.auth/logout" style="color:rgba(255,255,255,.55);font-size:.75rem;text-decoration:none;padding:4px 8px;
+       border:1px solid rgba(255,255,255,.3);border-radius:4px;" title="Cerrar sesión">Salir</a>
+  </div>
+  {% endif %}
+</nav>
+
+<div class="container">
+
+  <!-- ── Controls ── -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Desde</label>
+      <input type="text" value="{{ start }}" disabled style="color:var(--muted);background:#f9f9f9;">
+    </div>
+    <div class="ctrl-group">
+      <label>Hasta</label>
+      <input type="text" value="{{ end or 'cargando...' }}" disabled style="color:var(--muted);background:#f9f9f9;">
+    </div>
+    {% if all_tags %}
+    <div class="ctrl-group">
+      <label>Filtrar por tag</label>
+      <select name="tag" onchange="location.href='/overview?tag='+this.value">
+        <option value="">Todas las suscripciones</option>
+        {% for t in all_tags %}
+        <option value="{{ t }}" {% if t == tag_filter %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <a href="/overview?refresh=true" class="btn btn-primary" style="text-decoration:none;">
+        {% if loading %}
+        <span id="loading-btn" style="display:flex;align-items:center;gap:8px;">
+          <span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);
+                border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;"></span>
+          Cargando datos...
+        </span>
+        {% else %}
+        🔄 Actualizar ahora
+        {% endif %}
+      </a>
+      {% if last_updated %}
+      <span style="font-size:11px;color:var(--muted);">
+        Última actualización: {{ last_updated.strftime('%d/%m/%Y %H:%M') }} UTC
+        · próxima en ~3h
+      </span>
+      {% else %}
+      <span style="font-size:11px;color:var(--amber);">⏳ Primera carga en curso...</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Alerts ── -->
+  {% if error %}
+  <div class="alert alert-error">⚠ {{ error }}</div>
+  {% endif %}
+
+  {% if not fetched and not error %}
+  <div class="alert alert-info">
+    Selecciona un rango de fechas y pulsa <strong>Actualizar todo</strong> para cargar todas las suscripciones en paralelo.
+    {% if subscriptions %}
+    Tienes <strong>{{ subscriptions | length }}</strong> suscripciones configuradas.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if fetched and sub_summaries %}
+
+  <!-- ── KPI strip ── -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <span class="kpi-label">Coste total (período)</span>
+      <span class="kpi-value">{{ currency|currency_symbol }} {{ grand_total_all | format_cost }}</span>
+      <span class="kpi-sub">{{ period_days }} días · {{ sub_summaries | length }} suscripciones</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Media diaria global</span>
+      <span class="kpi-value">{{ currency|currency_symbol }} {{ avg_daily_all | format_cost }}</span>
+      <span class="kpi-sub">por día, todas las suscripciones</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Suscripciones activas</span>
+      <span class="kpi-value">{{ sub_summaries | selectattr('total', 'gt', 0) | list | length }}</span>
+      <span class="kpi-sub">de {{ sub_summaries | length }} totales con consumo</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Con errores</span>
+      <span class="kpi-value" style="color:{% if sub_summaries | selectattr('error') | list | length > 0 %}var(--red){% else %}var(--green){% endif %}">
+        {{ sub_summaries | selectattr('error') | list | length }}
+      </span>
+      <span class="kpi-sub">suscripciones no accesibles</span>
+    </div>
+  </div>
+
+  <!-- ── Comparison chart ── -->
+  {% set subs_with_data = sub_summaries | rejectattr('error') | list %}
+  {% if subs_with_data %}
+  <div class="chart-card">
+    <h2>Comparativa de coste por suscripción</h2>
+    <div class="chart-wrap">
+      <canvas id="compChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Sub cards ── -->
+  <div class="section-title">
+    Suscripciones
+    <span class="badge">{{ sub_summaries | length }}</span>
+  </div>
+
+  <div class="sub-grid">
+    {% for s in sub_summaries %}
+    <div class="sub-card">
+      <div class="card-header">
+        <div>
+          <div class="sub-name">{{ s.name }}</div>
+          <div class="sub-id">{{ s.id }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <!-- Estado -->
+          {% set state = s.get('state', '') %}
+          {% if state %}
+          <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;
+            {% if state == 'Enabled' %}background:#d4edda;color:#155724;
+            {% elif state == 'Warned' %}background:#fff3cd;color:#856404;
+            {% else %}background:#f8d7da;color:#721c24;{% endif %}">
+            {{ state }}
+          </span>
+          {% endif %}
+          <!-- Tags -->
+          <div class="tags">
+            {% for tag in s.get('tags', []) %}
+            <span class="tag">{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      {% if s.error %}
+      <div class="card-error">❌ {{ s.error }}</div>
+      {% else %}
+      <div class="card-body">
+
+        <div class="cost-row">
+          <div>
+            <div class="cost-main">{{ currency|currency_symbol }} {{ s.total | format_cost }}</div>
+            <div class="cost-label">Coste total del período</div>
+          </div>
+          <div class="cost-avg">~{{ currency|currency_symbol }} {{ s.avg_daily | format_cost }}/día</div>
+        </div>
+
+        {% if s.budget %}
+        <div class="budget-row">
+          <div class="budget-label">
+            <span>Presupuesto: {{ currency|currency_symbol }}{{ s.budget }}</span>
+            <span>{{ "%.0f"|format(s.budget_pct) }}%</span>
+          </div>
+          <div class="progress-bg">
+            <div class="progress-fill {% if s.budget_pct < 75 %}pct-ok{% elif s.budget_pct < 95 %}pct-warn{% else %}pct-over{% endif %}"
+                 style="width: {{ [s.budget_pct, 100] | min }}%"></div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Mini chart -->
+        {% if s.all_dates %}
+        <div class="mini-chart-wrap">
+          <canvas id="mini_{{ loop.index }}"></canvas>
+        </div>
+        {% endif %}
+
+        {% if s.top_services %}
+        <div class="top-services">
+          <div class="ts-title">Top servicios</div>
+          {% for svc_name, svc_cost in s.top_services %}
+          <div class="ts-row">
+            <span class="ts-name" title="{{ svc_name }}">{{ svc_name }}</span>
+            <span class="ts-cost">{{ currency|currency_symbol }} {{ svc_cost | format_cost }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not s.rate_card_ok %}
+        <div style="margin-top:8px;font-size:11px;color:var(--amber);">⚠ RateCard no disponible, costes sin confirmar</div>
+        {% endif %}
+
+        <!-- Metadatos enriquecidos -->
+        <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;display:flex;flex-direction:column;gap:5px;">
+          {% if s.get('currency') %}
+          <div style="display:flex;justify-content:space-between;font-size:11px;">
+            <span style="color:var(--muted);font-weight:600;">CURRENCY</span>
+            <span style="color:var(--text);font-weight:700;font-size:12px;">{{ s.currency }}</span>
+          </div>
+          {% endif %}
+          {% if s.get('offer_name') or s.get('quota_id') %}
+          <div style="display:flex;justify-content:space-between;font-size:11px;gap:8px;">
+            <span style="color:var(--muted);font-weight:600;white-space:nowrap;">OFFER</span>
+            <span style="color:var(--text);text-align:right;">
+              {{ s.offer_name or '' }}
+              {% if s.quota_id %}<span style="color:var(--muted);font-family:monospace;"> ({{ s.quota_id }})</span>{% endif %}
+            </span>
+          </div>
+          {% endif %}
+          {% if s.get('spending_limit') %}
+          <div style="display:flex;justify-content:space-between;font-size:11px;">
+            <span style="color:var(--muted);font-weight:600;">SPENDING LIMIT</span>
+            <span style="color:{% if s.spending_limit == 'Off' %}var(--green){% else %}var(--amber){% endif %};font-weight:600;">
+              {{ s.spending_limit }}
+            </span>
+          </div>
+          {% endif %}
+          {% if s.get('billing_period') %}
+          <div style="display:flex;justify-content:space-between;font-size:11px;">
+            <span style="color:var(--muted);font-weight:600;">BILLING PERIOD</span>
+            <span style="color:var(--text);font-family:monospace;font-size:10px;">{{ s.billing_period }}</span>
+          </div>
+          {% endif %}
+          {% if s.get('account_admin') %}
+          <div style="display:flex;justify-content:space-between;font-size:11px;gap:8px;">
+            <span style="color:var(--muted);font-weight:600;white-space:nowrap;">ACCOUNT ADMIN</span>
+            <span style="color:var(--text);font-size:10px;text-align:right;word-break:break-all;">{{ s.account_admin }}</span>
+          </div>
+          {% endif %}
+          {% if s.get('billing_account_id') %}
+          <div style="display:flex;justify-content:space-between;font-size:11px;gap:8px;">
+            <span style="color:var(--muted);font-weight:600;white-space:nowrap;">BILLING ACCOUNT</span>
+            <span style="color:var(--muted);font-family:monospace;font-size:10px;text-align:right;">{{ s.billing_account_id[:18] }}…</span>
+          </div>
+          {% endif %}
+          {% if s.get('tenant_id') %}
+          <div style="display:flex;justify-content:space-between;font-size:11px;gap:8px;">
+            <span style="color:var(--muted);font-weight:600;white-space:nowrap;">TENANT</span>
+            <span style="color:var(--muted);font-family:monospace;font-size:10px;text-align:right;">{{ s.tenant_id[:18] }}…</span>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+      <a href="/detail?sub={{ s.id }}&start={{ start }}&end={{ end }}&refresh=true" class="drilldown-link">
+        Ver detalle completo →
+      </a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% elif fetched %}
+  <div class="empty-state">
+    <div class="icon">📭</div>
+    <p>No se han podido cargar datos. Verifica tus suscripciones y credenciales.</p>
+  </div>
+  {% endif %}
+
+</div>
+<footer>Azure Sponsorship Monitor · Multi-Subscription Edition</footer>
+
+<script>
+{% if fetched and subs_with_data %}
+// ── Comparison bar chart ──
+(function() {
+  const labels = {{ sub_summaries | map(attribute='name') | list | tojson }};
+  const totals = {{ sub_summaries | map(attribute='total') | list | tojson }};
+  const colors = totals.map((_, i) => `hsl(${(i * 47) % 360}, 65%, 50%)`);
+
+  new Chart(document.getElementById('compChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Coste total ({{ currency|currency_symbol }})',
+        data: totals,
+        backgroundColor: colors,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ── Mini sparklines ──
+{% for s in sub_summaries %}
+{% if not s.error and s.all_dates %}
+(function() {
+  const dates  = {{ s.all_dates | tojson }};
+  const totals = [{% for d in s.all_dates %}{{ s.daily_totals.get(d, 0) | round(4) }}{% if not loop.last %},{% endif %}{% endfor %}];
+  new Chart(document.getElementById('mini_{{ loop.index }}'), {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [{
+        data: totals,
+        backgroundColor: 'rgba(0, 120, 212, 0.55)',
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => '{{ currency|currency_symbol }}' + ctx.parsed.y.toFixed(2)
+      }}},
+      scales: {
+        x: { display: false },
+        y: { display: false, beginAtZero: true }
+      }
+    }
+  });
+})();
+{% endif %}
+{% endfor %}
+{% endif %}
+</script>
+<script>
+{% if loading or not fetched %}
+(function() {
+  const POLL_INTERVAL = 3000;  // comprobar cada 3 segundos
+  let wasLoading = {{ 'true' if loading else 'false' }};
+
+  function checkStatus() {
+    fetch('/api/cache-status')
+      .then(r => r.json())
+      .then(data => {
+        if (wasLoading && !data.loading && data.has_data) {
+          // El fetch terminó y hay datos — recargar la página
+          window.location.reload();
+        } else if (data.loading || !data.has_data) {
+          wasLoading = true;
+          setTimeout(checkStatus, POLL_INTERVAL);
+        }
+      })
+      .catch(() => {
+        // Error de red — seguir intentando
+        setTimeout(checkStatus, POLL_INTERVAL * 2);
+      });
+  }
+
+  // Arrancar el polling
+  setTimeout(checkStatus, POLL_INTERVAL);
+})();
+{% endif %}
+</script>
+</body>
+</html>

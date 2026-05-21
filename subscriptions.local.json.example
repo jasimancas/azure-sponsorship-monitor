@@ -1,0 +1,14 @@
+{
+  "SUBSCRIPTION_ID_AQUI": {
+    "name": "Producción - IA",
+    "budget": 9000,
+    "currency": "EUR",
+    "tags": ["prod", "ia"]
+  },
+  "OTRO_SUBSCRIPTION_ID": {
+    "name": "Dev Equipo A",
+    "budget": 500,
+    "currency": "EUR",
+    "tags": ["dev"]
+  }
+}
