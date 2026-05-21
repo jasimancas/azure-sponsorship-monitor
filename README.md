@@ -1,88 +1,107 @@
-# Azure Subscription Monitor
+# Azure Sponsorship Monitor
 
-Panel de monitorización de consumo para suscripciones Azure de tipo **Partner Benefits / Sponsorship** (MS-AZR-0036P).
+A web dashboard for monitoring Azure consumption across multiple **Partner Benefits / Sponsorship** subscriptions (offer `Sponsored` / MS-AZR-0036P).
 
-Descubre automáticamente todas las suscripciones accesibles al Service Principal y filtra por Offer ID — sin listas hardcodeadas.
+Automatically discovers all subscriptions accessible to the Service Principal and filters by Offer ID — no hardcoded lists, no secrets in the repo.
 
-## Inicio rápido (Docker)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Docker](https://img.shields.io/badge/docker-ready-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-### 1. Instalar Docker Desktop
+## Features
+
+- **Auto-discovery** — finds all sponsored subscriptions via the Azure API, no JSON config needed
+- **Consolidated overview** — all subscriptions in one panel, sorted by consumption
+- **Auto-refresh** — fetches data every 3 hours in the background, page updates automatically
+- **Per-subscription detail** — daily cost chart, top services, billing metadata
+- **Entra ID auth** — Easy Auth integration for team access (Azure deployment)
+- **BRSDT decoding** — detects and labels Azure OpenAI / Copilot usage
+
+## Quick start (Docker)
+
+### 1. Install Docker Desktop
 
 ```bash
 brew install --cask docker
-# Abre Docker Desktop y espera a que arranque
 ```
 
-### 2. Clonar y configurar
+### 2. Clone and configure
 
 ```bash
-git clone https://github.com/TU_USUARIO/azure-subscription-monitor.git
-cd azure-subscription-monitor
+git clone https://github.com/jasimancas/azure-sponsorship-monitor.git
+cd azure-sponsorship-monitor
 
-# Crear tu .env con las credenciales (nunca se sube a Git)
 cp .env.example .env
-# Edita .env con tu AZURE_TENANT_ID, AZURE_CLIENT_ID y AZURE_CLIENT_SECRET
+# Edit .env with your AZURE_TENANT_ID, AZURE_CLIENT_ID and AZURE_CLIENT_SECRET
 ```
 
-### 3. (Opcional) Nombres y budgets custom
-
-```bash
-cp subscriptions.local.json.example subscriptions.local.json
-# Edita con los IDs de tus suscripciones y los nombres que quieras mostrar
-# Este archivo también está en .gitignore
-```
-
-### 4. Arrancar
+### 3. Start
 
 ```bash
 docker compose up
 ```
 
-Abre http://localhost:8000 — el overview carga automáticamente.
+Open http://localhost:8000 — the overview loads automatically on first run.
 
-## Permisos necesarios del Service Principal
+## Service Principal permissions
 
-El SP necesita el rol **Reader** en cada suscripción que quieras monitorizar,
-o en el Management Group que las contenga:
+The SP needs the **Reader** role on each subscription to monitor, or on the Management Group containing them:
 
 ```bash
 az role assignment create \
-  --assignee TU_CLIENT_ID \
+  --assignee YOUR_CLIENT_ID \
   --role "Reader" \
   --scope /subscriptions/SUBSCRIPTION_ID
 ```
 
-## Variables de entorno
+## Environment variables
 
-| Variable | Descripción | Obligatoria |
-|----------|-------------|-------------|
-| `AZURE_TENANT_ID` | ID del tenant | ✅ |
-| `AZURE_CLIENT_ID` | Client ID del SP | ✅ |
-| `AZURE_CLIENT_SECRET` | Secret del SP | ✅ |
-| `AZURE_OFFER_IDS` | Offer IDs separados por coma | ❌ (default: `MS-AZR-0036P`) |
-| `AZURE_CURRENCY` | Moneda para RateCard | ❌ (default: `EUR`) |
-| `FLASK_SECRET_KEY` | Clave secreta Flask | ✅ en producción |
-| `MAX_WORKERS` | Hilos paralelos | ❌ (default: `10`) |
-| `REFRESH_HOURS` | Frecuencia de refresco | ❌ (default: `3`) |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `AZURE_TENANT_ID` | Azure tenant ID | ✅ |
+| `AZURE_CLIENT_ID` | Service Principal client ID | ✅ |
+| `AZURE_CLIENT_SECRET` | Service Principal secret | ✅ |
+| `AZURE_OFFER_IDS` | Offer IDs to monitor (comma-separated) | ❌ default: `Sponsored` |
+| `AZURE_CURRENCY` | Currency for RateCard | ❌ default: `EUR` |
+| `AZURE_LOCALE` | Locale for RateCard | ❌ default: `es-ES` |
+| `AZURE_REGION_INFO` | Region for RateCard | ❌ default: `ES` |
+| `FLASK_SECRET_KEY` | Flask secret key | ✅ in production |
+| `MAX_WORKERS` | Parallel fetch threads | ❌ default: `8` |
+| `REFRESH_HOURS` | Background refresh interval | ❌ default: `3` |
 
-## Estructura del repo
+## Repository structure
 
 ```
 .
-├── app.py                         # App Flask principal
+├── app.py                              # Flask application
 ├── requirements.txt
 ├── Dockerfile
 ├── docker-compose.yml
 ├── templates/
-│   ├── index.html                 # Vista detalle por suscripción
-│   └── overview.html              # Panel consolidado
-├── .env.example                   # Plantilla de variables (sin secretos)
-├── subscriptions.local.json.example  # Plantilla de overrides locales
-└── .gitignore
+│   ├── index.html                      # Per-subscription detail view
+│   └── overview.html                   # Consolidated dashboard
+├── .github/
+│   └── workflows/
+│       └── docker-build.yml            # Builds and pushes to GHCR on push to main
+├── .env.example                        # Environment variable template
+└── subscriptions.local.json.example    # Optional local name/budget overrides
 ```
 
-## Seguridad
+## Docker image
 
-- Ningún secreto en el repo — todo vía variables de entorno
-- `.env` y `subscriptions.local.json` están en `.gitignore`
-- Las suscripciones se descubren automáticamente por Offer ID, sin IDs en el código
+Every push to `main` builds a Docker image and publishes it to GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/jasimancas/azure-sponsorship-monitor:latest
+```
+
+## Security
+
+- No secrets in the repository — all credentials via environment variables
+- `.env` is gitignored
+- Subscriptions are discovered dynamically by Offer ID — no subscription IDs in code
+- Managed Identity support for Azure App Service deployment (no SP secret needed in production)
+
+## License
+
+MIT
