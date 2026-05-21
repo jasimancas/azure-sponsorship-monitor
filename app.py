@@ -136,8 +136,9 @@ def auth_callback():
 @app.route("/logout")
 def logout():
     session.clear()
+    tenant_id = os.environ.get("AZURE_TENANT_ID", "")
     logout_url = (
-        f"{_AUTHORITY}/oauth2/v2.0/logout"
+        f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/logout"
         f"?post_logout_redirect_uri={url_for('overview', _external=True)}"
     )
     return redirect(logout_url)
