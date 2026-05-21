@@ -39,10 +39,14 @@ from flask import Flask, render_template, request, redirect, url_for, session
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
+# Necesario para que url_for genere https cuando está detrás de un proxy/LB
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
