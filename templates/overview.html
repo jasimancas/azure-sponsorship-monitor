@@ -258,9 +258,14 @@
       {{ current_user.name[:1].upper() if current_user.name else '?' }}
     </div>
     <span style="font-size:.8rem;color:rgba(255,255,255,.85);">{{ current_user.name }}</span>
-    <a href="/.auth/logout" style="color:rgba(255,255,255,.55);font-size:.75rem;text-decoration:none;padding:4px 8px;
-       border:1px solid rgba(255,255,255,.3);border-radius:4px;" title="Cerrar sesión">Salir</a>
+    <a href="/logout" style="color:rgba(255,255,255,.55);font-size:.75rem;text-decoration:none;padding:4px 8px;
+       border:1px solid rgba(255,255,255,.3);border-radius:4px;">Salir</a>
   </div>
+  {% elif sso_enabled %}
+  <a href="/login" style="margin-left:auto;color:rgba(255,255,255,.85);text-decoration:none;font-size:.85rem;
+     font-weight:600;padding:.4rem .9rem;border:1px solid rgba(255,255,255,.4);border-radius:5px;">
+    Iniciar sesión
+  </a>
   {% endif %}
 </nav>
 

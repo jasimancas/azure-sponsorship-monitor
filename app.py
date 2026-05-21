@@ -23,18 +23,21 @@ from __future__ import annotations
 import json
 import logging
 import os
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
 from typing import Optional
 
+import msal
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.commerce import UsageManagementClient
 from azure.mgmt.subscription import SubscriptionClient
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
+
 from apscheduler.schedulers.background import BackgroundScheduler
-import base64
 
 load_dotenv()
 
@@ -42,40 +45,101 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
 log = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# SSO con MSAL (Microsoft Authentication Library)
+# ---------------------------------------------------------------------------
+
+_TENANT_ID     = os.environ.get("AZURE_TENANT_ID", "")
+_CLIENT_ID     = os.environ.get("AZURE_CLIENT_ID", "")
+_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET", "")
+_AUTHORITY     = f"https://login.microsoftonline.com/{_TENANT_ID}"
+_SCOPES        = ["User.Read"]
+_REDIRECT_PATH = "/auth/callback"
+
+# SSO activo solo si hay credenciales de Entra ID configuradas
+SSO_ENABLED = bool(_TENANT_ID and _CLIENT_ID and _CLIENT_SECRET)
+
+
+def _get_msal_app() -> msal.ConfidentialClientApplication:
+    return msal.ConfidentialClientApplication(
+        _CLIENT_ID,
+        authority=_AUTHORITY,
+        client_credential=_CLIENT_SECRET,
+    )
+
+
 def _get_current_user() -> dict:
-    """
-    Lee la identidad del usuario autenticado desde los headers de Easy Auth.
-    Easy Auth inyecta X-MS-CLIENT-PRINCIPAL (base64 JSON) en cada request.
-    En local (sin Easy Auth) devuelve un usuario de desarrollo.
-    """
-    principal_header = request.headers.get("X-MS-CLIENT-PRINCIPAL")
-    if not principal_header:
-        # Desarrollo local: sin Easy Auth
-        return {"name": "Dev User", "email": "", "groups": [], "authenticated": False}
-    try:
-        decoded = base64.b64decode(principal_header).decode("utf-8")
-        principal = json.loads(decoded)
-        claims = {c["typ"]: c["val"] for c in principal.get("claims", [])}
-        # Grupos: pueden venir como claim "groups" repetido → lista
-        groups = [
-            c["val"] for c in principal.get("claims", [])
-            if c["typ"] == "groups"
-        ]
-        return {
-            "name":          claims.get("name") or claims.get("preferred_username", ""),
-            "email":         claims.get("preferred_username") or claims.get("email", ""),
-            "oid":           claims.get("oid", ""),
-            "groups":        groups,
-            "authenticated": True,
-        }
-    except Exception:
-        return {"name": "Unknown", "email": "", "groups": [], "authenticated": True}
+    """Devuelve el usuario de la sesión o un usuario anónimo si SSO está desactivado."""
+    if not SSO_ENABLED:
+        return {"name": "Dev User", "email": "", "authenticated": False}
+    user = session.get("user")
+    if user:
+        return {**user, "authenticated": True}
+    return {"name": "", "email": "", "authenticated": False}
+
+
+def login_required(f):
+    """Decorador que redirige al login si el usuario no está autenticado."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if SSO_ENABLED and not session.get("user"):
+            session["next_url"] = request.url
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route("/login")
+def login():
+    if not SSO_ENABLED:
+        return redirect(url_for("overview"))
+    session["state"] = str(uuid.uuid4())
+    auth_url = _get_msal_app().get_authorization_request_url(
+        _SCOPES,
+        state=session["state"],
+        redirect_uri=url_for("auth_callback", _external=True),
+    )
+    return redirect(auth_url)
+
+
+@app.route("/auth/callback")
+def auth_callback():
+    if request.args.get("state") != session.get("state"):
+        return redirect(url_for("overview"))
+    if "error" in request.args:
+        return f"Error de autenticación: {request.args.get('error_description')}", 400
+
+    result = _get_msal_app().acquire_token_by_authorization_code(
+        request.args["code"],
+        scopes=_SCOPES,
+        redirect_uri=url_for("auth_callback", _external=True),
+    )
+    if "error" in result:
+        return f"Error obteniendo token: {result.get('error_description')}", 400
+
+    claims = result.get("id_token_claims", {})
+    session["user"] = {
+        "name":  claims.get("name") or claims.get("preferred_username", ""),
+        "email": claims.get("preferred_username") or claims.get("email", ""),
+        "oid":   claims.get("oid", ""),
+    }
+    next_url = session.pop("next_url", url_for("overview"))
+    return redirect(next_url)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    logout_url = (
+        f"{_AUTHORITY}/oauth2/v2.0/logout"
+        f"?post_logout_redirect_uri={url_for('overview', _external=True)}"
+    )
+    return redirect(logout_url)
 
 
 @app.context_processor
 def inject_user():
-    """Hace que current_user esté disponible en todos los templates."""
-    return {"current_user": _get_current_user()}
+    return {"current_user": _get_current_user(), "sso_enabled": SSO_ENABLED}
 
 
 # ---------------------------------------------------------------------------
@@ -902,6 +966,7 @@ def _date_context() -> dict:
 
 
 @app.route("/overview")
+@login_required
 def overview():
     """
     Panel consolidado. Sirve datos de _OVERVIEW_CACHE (actualizado cada 3h).
@@ -956,6 +1021,7 @@ def index():
 
 
 @app.route("/detail")
+@login_required
 def detail():
     """
     Dashboard individual: igual que el original pero con selector de suscripción.
