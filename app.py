@@ -637,6 +637,7 @@ def fetch_usage(
             "meter_sub_category": getattr(item, "meter_sub_category", "") or "",
             "unit":               getattr(item, "unit", "") or "",
             "quantity":           getattr(item, "quantity", 0),
+            "api_cost":           getattr(item, "cost", None),   # coste real calculado por Azure
             "usage_start":        getattr(item, "usage_start_time", ""),
             "usage_end":          getattr(item, "usage_end_time", ""),
             "subscription_id":    subscription_id,
@@ -670,8 +671,15 @@ def process_records(records: list[dict], rate_map: dict, period_days: int) -> di
     for rec in records:
         qty      = float(rec["quantity"] or 0)
         meter_id = rec.get("meter_id", "")
-        rate_info = rate_map.get(meter_id)
-        cost = calculate_cost(qty, rate_info) if rate_info else 0.0
+
+        # Usar el coste ya calculado por Azure si está disponible (más preciso)
+        # Solo usar RateCard como fallback si la API no devuelve coste
+        api_cost = rec.get("api_cost")
+        if api_cost is not None:
+            cost = float(api_cost)
+        else:
+            rate_info = rate_map.get(meter_id)
+            cost = calculate_cost(qty, rate_info) if rate_info else 0.0
         rec["cost"] = cost
         rec = _decode_brsdt(rec, cost)
         if not rec.get("meter_category"):
@@ -756,6 +764,34 @@ def process_records(records: list[dict], rate_map: dict, period_days: int) -> di
         if total_in > 0:
             cache_efficiency[model] = cache_hits[model] / total_in
 
+    # ── Proyección para días sin datos (entre último día real y hoy) ─────────
+    today_str     = _today().strftime("%Y-%m-%d")
+    projected_days: list[str]  = []
+    projected_cost_per_day = 0.0
+    projected_total = 0.0
+
+    if chart_labels_list:
+        last_real_day = chart_labels_list[-1]
+
+        # Coste del último día disponible como base de proyección
+        last_day_totals = {}
+        for svc, daily in svc_chart_daily.items():
+            last_day_totals[svc] = daily.get(last_real_day, 0.0)
+        projected_cost_per_day = sum(last_day_totals.values())
+
+        # Generar días proyectados entre el último real y hoy (exclusive)
+        from datetime import date
+        last_date  = date.fromisoformat(last_real_day)
+        today_date = date.fromisoformat(today_str)
+        delta = (today_date - last_date).days
+
+        for i in range(1, delta + 1):
+            proj_day = (last_date + timedelta(days=i)).isoformat()
+            projected_days.append(proj_day)
+            projected_total += projected_cost_per_day
+
+    projected_grand_total = grand_total_cost + projected_total
+
     return dict(
         records=records,
         total_quantity_by_meter=sorted_quantity,
@@ -782,6 +818,11 @@ def process_records(records: list[dict], rate_map: dict, period_days: int) -> di
         brsdt_rate_labels=_BRSDT_RATE_LABELS,
         brsdt_other_rates=_BRSDT_OTHER_RATES,
         brsdt_unmatched_rates=sorted(brsdt_unmatched_rates),
+        # Proyección
+        projected_days=projected_days,
+        projected_cost_per_day=projected_cost_per_day,
+        projected_total=projected_total,
+        projected_grand_total=projected_grand_total,
     )
 
 
@@ -832,7 +873,13 @@ def _fetch_subscription_summary(
             for i, d in enumerate(all_dates):
                 daily_totals[d] = daily_totals.get(d, 0.0) + series[i]
 
-        budget_pct = (grand_total / budget * 100) if budget else None
+        # Proyección
+        proj_days    = processed["projected_days"]
+        proj_per_day = processed["projected_cost_per_day"]
+        proj_total   = processed["projected_total"]
+        proj_grand   = processed["projected_grand_total"]
+
+        budget_pct = (proj_grand / budget * 100) if budget else None
 
         return {
             "id":            sub_id,
@@ -847,6 +894,11 @@ def _fetch_subscription_summary(
             "all_dates":     all_dates,
             "rate_card_ok":  bool(rate_map),
             "error":         None,
+            # Proyección
+            "projected_days":         proj_days,
+            "projected_cost_per_day": proj_per_day,
+            "projected_total":        proj_total,
+            "projected_grand_total":  proj_grand,
             # ── Metadatos enriquecidos ──
             "status":         details.get("status") or "Unknown",
             "display_name":   details.get("display_name") or sub_name,

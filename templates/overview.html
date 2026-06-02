@@ -308,6 +308,7 @@
       <span style="font-size:11px;color:var(--muted);">
         Última actualización: {{ last_updated.strftime('%d/%m/%Y %H:%M') }} UTC
         · próxima en ~3h
+        · <span title="Azure Usage API tiene 2-3 días de retraso en los datos">⚠ datos con 2-3 días de retraso (limitación de Azure)</span>
       </span>
       {% else %}
       <span style="font-size:11px;color:var(--amber);">⏳ Primera carga en curso...</span>
@@ -410,10 +411,28 @@
         <div class="cost-row">
           <div>
             <div class="cost-main">{{ currency|currency_symbol }} {{ s.total | format_cost }}</div>
-            <div class="cost-label">Coste total del período</div>
+            <div class="cost-label">Coste real del período</div>
           </div>
           <div class="cost-avg">~{{ currency|currency_symbol }} {{ s.avg_daily | format_cost }}/día</div>
         </div>
+
+        {% if s.get('projected_days') %}
+        <div style="display:flex;justify-content:space-between;align-items:center;
+                    background:#fff8e1;border:1px solid #ffe082;border-radius:6px;
+                    padding:8px 12px;margin-bottom:10px;">
+          <div>
+            <span style="font-size:12px;font-weight:700;color:#f57c00;">
+              ≈ {{ currency|currency_symbol }} {{ s.projected_grand_total | format_cost }}
+            </span>
+            <div style="font-size:10px;color:#f57c00;">
+              Proyección hasta hoy (+{{ s.projected_days|length }} días estimados)
+            </div>
+          </div>
+          <div style="font-size:10px;color:#f57c00;text-align:right;">
+            {{ currency|currency_symbol }}{{ s.projected_cost_per_day | format_cost }}/día
+          </div>
+        </div>
+        {% endif %}
 
         {% if s.budget %}
         <div class="budget-row">
@@ -557,20 +576,31 @@
 (function() {
   const dates  = {{ s.all_dates | tojson }};
   const totals = [{% for d in s.all_dates %}{{ s.daily_totals.get(d, 0) | round(4) }}{% if not loop.last %},{% endif %}{% endfor %}];
+  {% if s.get('projected_days') %}
+  const projDates  = {{ s.projected_days | tojson }};
+  const projVal    = {{ s.projected_cost_per_day | round(4) }};
+  const allLabels  = dates.concat(projDates);
+  const allData    = totals.concat(projDates.map(() => projVal));
+  const bgColors   = dates.map(() => 'rgba(0,120,212,0.55)').concat(projDates.map(() => 'rgba(255,140,0,0.65)'));
+  {% else %}
+  const allLabels = dates;
+  const allData   = totals;
+  const bgColors  = dates.map(() => 'rgba(0,120,212,0.55)');
+  {% endif %}
   new Chart(document.getElementById('mini_{{ loop.index }}'), {
     type: 'bar',
     data: {
-      labels: dates,
+      labels: allLabels,
       datasets: [{
-        data: totals,
-        backgroundColor: 'rgba(0, 120, 212, 0.55)',
+        data: allData,
+        backgroundColor: bgColors,
         borderRadius: 3,
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: {
-        label: ctx => '{{ currency|currency_symbol }}' + ctx.parsed.y.toFixed(2)
+        label: ctx => (ctx.dataIndex >= dates.length ? '≈ ' : '') + '{{ currency|currency_symbol }}' + ctx.parsed.y.toFixed(2)
       }}},
       scales: {
         x: { display: false },
