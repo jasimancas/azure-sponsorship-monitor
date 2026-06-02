@@ -258,9 +258,6 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
   </a>
   <div class="nav-links">
     <a href="/overview" class="active">Overview</a>
-    {% if subscriptions %}
-    <a href="/detail?sub={{ subscriptions[0].id }}">Detalle</a>
-    {% endif %}
   </div>
   {% if current_user.authenticated %}
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
