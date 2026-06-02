@@ -237,7 +237,7 @@
   .empty-state { text-align: center; padding: 60px; color: var(--muted); }
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
 
-  footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px; }
+footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
@@ -538,7 +538,12 @@
   {% endif %}
 
 </div>
-<footer>Azure Sponsorship Monitor · Multi-Subscription Edition</footer>
+<footer>
+  Azure Sponsorship Monitor
+  {% if app_version and app_version != 'dev' %}· v{{ app_version[:7] }}{% endif %}
+  {% if build_date %}· Built {{ build_date[:10] }}{% endif %}
+  · <span style="color:var(--amber);" title="Azure Usage API has 1-2 days delay">⚠ Data with 1-2 day API delay</span>
+</footer>
 
 <script>
 {% if fetched and subs_with_data %}

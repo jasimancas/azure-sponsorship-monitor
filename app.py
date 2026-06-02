@@ -146,7 +146,12 @@ def logout():
 
 @app.context_processor
 def inject_user():
-    return {"current_user": _get_current_user(), "sso_enabled": _sso_enabled()}
+    return {
+        "current_user": _get_current_user(),
+        "sso_enabled":  _sso_enabled(),
+        "app_version":  os.environ.get("APP_VERSION", "dev"),
+        "build_date":   os.environ.get("BUILD_DATE", ""),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +166,6 @@ def _today() -> datetime:
 
 def _yesterday() -> datetime:
     return _today() - timedelta(days=1)
-
 # Caché compartida del overview (actualizada cada 3h por el scheduler)
 _OVERVIEW_CACHE: dict = {
     "sub_summaries":   [],

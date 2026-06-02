@@ -3,301 +3,302 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Azure Sponsorship Monitor</title>
+  <title>Azure Sponsorship Monitor — Detail</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-
-    body {
-      font-family: "Segoe UI", system-ui, sans-serif;
-      margin: 0;
-      background: #f0f2f5;
-      color: #1a1a2e;
+    /* ── Design tokens (same as overview.html) ── */
+    :root {
+      --azure:       #0078d4;
+      --azure-dark:  #005a9e;
+      --azure-light: #e8f4ff;
+      --green:       #107c10;
+      --amber:       #ff8c00;
+      --red:         #d13438;
+      --purple:      #5c2d91;
+      --bg:          #f3f4f6;
+      --card:        #ffffff;
+      --border:      #e1e4e8;
+      --text:        #1f2937;
+      --muted:       #6b7280;
+      --radius:      10px;
+      --font:        "Segoe UI", system-ui, sans-serif;
+      --font-mono:   "Cascadia Code", "Consolas", monospace;
     }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; }
 
-    header {
-      background: #0078d4;
+    /* ── Navbar (identical to overview) ── */
+    .navbar {
+      background: var(--azure);
       color: #fff;
-      padding: 1rem 2rem;
+      padding: 0 24px;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 16px;
+      height: 52px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
     }
-    header h1 { margin: 0; font-size: 1.4rem; font-weight: 600; }
-
-    main { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
-
-    /* ── filter form ── */
-    form.filters {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1rem 1.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      align-items: flex-end;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      margin-bottom: 1.5rem;
+    .navbar .logo {
+      display: flex; align-items: center; gap: 10px; text-decoration: none;
     }
-    .field { display: flex; flex-direction: column; gap: 4px; }
-    .field label { font-size: .8rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .04em; }
-    .field input, .field select {
-      border: 1px solid #c8c8c8;
-      border-radius: 4px;
-      padding: .4rem .6rem;
-      font-size: .95rem;
-      min-width: 140px;
+    .navbar .brand { font-size: 17px; font-weight: 700; letter-spacing: -.3px; color: #fff; }
+    .navbar .nav-links { display: flex; gap: 4px; }
+    .navbar .nav-links a {
+      color: rgba(255,255,255,.85); text-decoration: none;
+      padding: 6px 14px; border-radius: 6px; font-size: 13px; transition: background .15s;
     }
-    .field input:focus, .field select:focus { outline: 2px solid #0078d4; border-color: transparent; }
-    button[type=submit] {
-      background: #0078d4;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      padding: .5rem 1.25rem;
-      font-size: .95rem;
-      cursor: pointer;
-      align-self: flex-end;
+    .navbar .nav-links a:hover { background: rgba(255,255,255,.2); color: #fff; }
+    .navbar .nav-links a.active { background: rgba(255,255,255,.2); color: #fff; }
+    .navbar .user-info { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .navbar .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 600; color: #fff; flex-shrink: 0;
     }
-    button[type=submit]:hover { background: #005fa3; }
-
-    /* ── alert ── */
-    .alert {
-      background: #fde8e8;
-      border-left: 4px solid #d32f2f;
-      border-radius: 4px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.5rem;
-      font-size: .95rem;
+    .navbar .user-name { font-size: .8rem; font-weight: 600; color: #fff; }
+    .navbar .user-email { font-size: .7rem; color: rgba(255,255,255,.7); }
+    .navbar .logout-btn {
+      color: rgba(255,255,255,.6); font-size: .75rem; text-decoration: none;
+      padding: 3px 8px; border: 1px solid rgba(255,255,255,.3); border-radius: 4px;
+    }
+    .navbar .login-btn {
+      color: rgba(255,255,255,.85); text-decoration: none; font-size: .85rem;
+      font-weight: 600; padding: .4rem .9rem;
+      border: 1px solid rgba(255,255,255,.4); border-radius: 5px;
     }
 
-    /* ── grand total card ── */
+    /* ── Layout ── */
+    main { max-width: 1300px; margin: 0 auto; padding: 20px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 20px;
+    }
+    .card .label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;
+    }
+    .card .value { font-size: 24px; font-weight: 700; color: var(--azure); }
+    .card .sub   { font-size: 12px; color: var(--muted); margin-top: 4px; word-break: break-word; }
+
+    /* ── Grand total ── */
     .grand-total {
-      background: linear-gradient(135deg, #0078d4, #005fa3);
-      color: #fff;
-      border-radius: 10px;
-      padding: 1.5rem 2rem;
-      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, var(--azure), var(--azure-dark));
+      color: #fff; border-radius: var(--radius);
+      padding: 20px 24px; margin-bottom: 20px;
       box-shadow: 0 2px 8px rgba(0,120,212,.25);
     }
     .grand-total-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem 2rem;
-      align-items: end;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px 24px; align-items: end;
     }
-    .grand-total .label { font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; opacity: .85; }
-    .grand-total .amount { font-size: 2.4rem; font-weight: 800; margin: .25rem 0; }
-    .grand-total .note { font-size: .82rem; opacity: .7; }
+    .grand-total .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; opacity: .85; margin-bottom: 4px; }
+    .grand-total .amount { font-size: 2.2rem; font-weight: 800; }
+    .grand-total .note { font-size: .82rem; opacity: .7; margin-top: 8px; }
 
-    /* ── summary cards ── */
+    /* ── Projection banner ── */
+    .proj-banner {
+      background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px;
+      padding: 10px 16px; margin-top: 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .proj-banner .proj-amount { font-size: 1.4rem; font-weight: 700; color: #e65100; }
+    .proj-banner .proj-label  { font-size: 11px; color: #f57c00; margin-top: 2px; }
+    .proj-banner .proj-rate   { font-size: 12px; color: #f57c00; text-align: right; }
+
+    /* ── Filter form ── */
+    .filters {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 20px;
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 20px;
+    }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .field input, .field select {
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 7px 10px; font-size: 13px; background: #fff; color: var(--text); min-width: 140px;
+    }
+    .field input:focus, .field select:focus { outline: 2px solid var(--azure); border-color: transparent; }
+    button[type=submit] {
+      background: var(--azure); color: #fff; border: none;
+      border-radius: 6px; padding: 8px 20px; font-size: 13px;
+      font-weight: 600; cursor: pointer;
+    }
+    button[type=submit]:hover { opacity: .85; }
+
+    /* ── Alert ── */
+    .alert {
+      border-left: 4px solid var(--red); border-radius: var(--radius);
+      padding: 12px 16px; margin-bottom: 16px; font-size: 13px;
+      background: #fde8e8; color: #c0392b;
+    }
+    .alert.warn { background: #fff8e1; border-left-color: var(--amber); color: #856404; }
+
+    /* ── Summary grid ── */
     .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1rem;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px; margin-bottom: 16px;
     }
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-    }
-    .card .label { font-size: .75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .25rem; }
-    .card .value { font-size: 1.5rem; font-weight: 700; color: #0078d4; }
-    .card .sub   { font-size: .82rem; color: #555; margin-top: .2rem; word-break: break-word; }
-
     .show-more-btn {
-      background: none;
-      border: 1px solid #c8c8c8;
-      border-radius: 4px;
-      padding: .4rem 1rem;
-      font-size: .88rem;
-      color: #0078d4;
-      cursor: pointer;
-      margin-bottom: 1.5rem;
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 16px; font-size: 13px; color: var(--azure); cursor: pointer; margin-bottom: 20px;
     }
-    .show-more-btn:hover { background: #f0f6ff; }
+    .show-more-btn:hover { background: var(--azure-light); }
 
-    /* ── table filters ── */
+    /* ── View toggle ── */
+    .view-toggle { display: flex; gap: 0; margin-bottom: 20px; }
+    .toggle-btn {
+      background: var(--card); color: var(--muted); border: 1px solid var(--border);
+      padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s;
+    }
+    .toggle-btn:first-child { border-radius: 6px 0 0 6px; }
+    .toggle-btn:last-child  { border-radius: 0 6px 6px 0; border-left: none; }
+    .toggle-btn.active { background: var(--azure); color: #fff; border-color: var(--azure); }
+    .toggle-btn:not(.active):hover { background: var(--azure-light); color: var(--azure); }
+
+    /* ── Chart section ── */
+    .chart-section {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px;
+    }
+    .chart-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; margin-bottom: 16px;
+    }
+    .chart-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .chart-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .chart-canvas-wrap { position: relative; height: 280px; }
+    .chart-canvas-wrap.pie-mode { height: 340px; }
+
+    /* ── Table filters & toolbar ── */
     .table-filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .75rem;
-      margin-bottom: .75rem;
+      display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;
     }
     .table-filters select {
-      border: 1px solid #c8c8c8;
-      border-radius: 4px;
-      padding: .35rem .5rem;
-      font-size: .85rem;
-      min-width: 160px;
-      background: #fff;
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 10px; font-size: 13px; background: #fff; min-width: 160px;
     }
     .table-filters label {
-      font-size: .75rem;
-      font-weight: 600;
-      color: #555;
-      text-transform: uppercase;
-      letter-spacing: .04em;
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em;
     }
     .table-filters .tf { display: flex; flex-direction: column; gap: 3px; }
-
     .table-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: .75rem;
-      margin-bottom: .75rem;
-      align-items: center;
+      display: flex; flex-wrap: wrap; justify-content: space-between;
+      gap: 10px; margin-bottom: 10px; align-items: center;
     }
-    .table-toolbar .meta {
-      font-size: .82rem;
-      color: #555;
-    }
-    .table-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
-    }
+    .table-toolbar .meta { font-size: 12px; color: var(--muted); }
+    .table-actions { display: flex; flex-wrap: wrap; gap: 6px; }
     .secondary-btn {
-      background: #fff;
-      color: #0078d4;
-      border: 1px solid #b7cbe2;
-      border-radius: 4px;
-      padding: .45rem .85rem;
-      font-size: .88rem;
-      cursor: pointer;
+      background: var(--card); color: var(--azure);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 14px; font-size: 13px; cursor: pointer;
     }
-    .secondary-btn:hover { background: #f0f6ff; }
+    .secondary-btn:hover { background: var(--azure-light); }
     .column-panel {
-      display: none;
-      background: #fff;
-      border: 1px solid #d7e3f0;
-      border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.08);
-      padding: 1rem 1.1rem;
-      margin-bottom: .75rem;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
     }
-    .column-panel.open { display: block; }
+    .column-panel[hidden] { display: none; }
     .column-panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: .75rem;
-      margin-bottom: .85rem;
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
     }
-    .column-panel-title {
-      font-size: .92rem;
-      font-weight: 600;
-      color: #1a1a2e;
-    }
-    .column-panel-note {
-      font-size: .8rem;
-      color: #666;
-    }
-    .column-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: .65rem 1rem;
-    }
-    .column-option {
-      display: flex;
-      gap: .5rem;
-      align-items: center;
-      font-size: .88rem;
-      color: #1a1a2e;
-    }
+    .column-panel-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .column-panel-note  { font-size: 11px; color: var(--muted); }
+    .column-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+    .column-option { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--text); }
     .column-option input { margin: 0; }
+    .is-hidden-column { display: none !important; }
 
-    .is-hidden-column { display: none; }
-
-    /* ── table ── */
+    /* ── Table ── */
     .table-wrap {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      overflow-x: auto;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow-x: auto;
     }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: .88rem;
-    }
-    thead tr { background: #0078d4; color: #fff; }
-    thead th { padding: .65rem 1rem; text-align: left; font-weight: 600; white-space: nowrap; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    thead tr { background: var(--azure); color: #fff; }
+    thead th { padding: 10px 14px; text-align: left; font-weight: 600; white-space: nowrap; }
     thead th.sortable { cursor: pointer; user-select: none; }
-    thead th.sortable:hover { background: #005fa3; }
+    thead th.sortable:hover { background: var(--azure-dark); }
     thead th.sortable::after { content: " \2195"; font-size: .7rem; opacity: .6; }
-    thead th.sort-asc::after { content: " \25B2"; opacity: 1; }
+    thead th.sort-asc::after  { content: " \25B2"; opacity: 1; }
     thead th.sort-desc::after { content: " \25BC"; opacity: 1; }
     tbody tr:nth-child(even) { background: #f8f9fb; }
-    tbody td { padding: .55rem 1rem; border-bottom: 1px solid #eee; }
-    tbody td.num { text-align: right; }
+    tbody td { padding: 8px 14px; border-bottom: 1px solid var(--border); }
+    tbody td.num { text-align: right; font-family: var(--font-mono); font-size: 12px; }
     thead th.num { text-align: right; }
+    .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
 
-    .empty {
-      text-align: center;
-      padding: 3rem;
-      color: #888;
-      font-size: 1rem;
-    }
-
-    /* ── loading overlay ── */
+    /* ── Loading overlay ── */
     .loading-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(255,255,255,.7);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: .75rem;
+      display: none; position: fixed; inset: 0;
+      background: rgba(255,255,255,.75); z-index: 1000;
+      align-items: center; justify-content: center; flex-direction: column; gap: 12px;
     }
     .loading-overlay.active { display: flex; }
     .spinner {
-      width: 40px; height: 40px;
-      border: 4px solid #e0e0e0;
-      border-top-color: #0078d4;
-      border-radius: 50%;
+      width: 40px; height: 40px; border: 4px solid var(--border);
+      border-top-color: var(--azure); border-radius: 50%;
       animation: spin .8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-overlay .msg {
-      font-size: .95rem; color: #555;
-      text-align: center; max-width: 320px;
+    .loading-overlay .msg { font-size: 13px; color: var(--muted); text-align: center; max-width: 300px; }
+
+    /* ── Rate ref & cache tables ── */
+    .rate-ref-table { width: auto; font-size: 13px; border-collapse: collapse; }
+    .rate-ref-table th { text-align: left; padding: 6px 12px; font-weight: 600; color: var(--text); background: var(--bg); }
+    .rate-ref-table td { padding: 5px 12px; border-bottom: 1px solid var(--border); }
+    .rate-ref-table td.num { text-align: right; font-family: var(--font-mono); }
+    .rate-ref-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    .unmatched-badge {
+      display: inline-block; background: #fff3cd; color: #856404;
+      font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-right: 4px;
     }
 
-    /* ── chart section ── */
-    .chart-section {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1.25rem 1.5rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      margin-bottom: 1.5rem;
+    /* ── Subscription selector ── */
+    .sub-selector-bar {
+      background: var(--azure-light); border: 1px solid #90caf9;
+      border-radius: var(--radius); padding: 12px 20px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
     }
-    .chart-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: .75rem;
-      margin-bottom: 1rem;
+    .sub-selector-label {
+      font-size: 11px; font-weight: 700; color: var(--azure-dark);
+      text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
     }
-    .chart-title {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #1a1a2e;
+    .sub-selector-select {
+      border: 1px solid #90caf9; border-radius: 6px; padding: 6px 10px;
+      font-size: 13px; background: #fff; color: var(--text); min-width: 280px; max-width: 480px;
     }
-    .chart-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .75rem;
-      align-items: flex-end;
+    .sub-selector-id { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+    .sub-selector-budget { font-size: 12px; font-weight: 600; color: var(--azure-dark); margin-left: auto; }
+
+    /* ── Metadata panel ── */
+    .meta-panel {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 20px; margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;
     }
-    .chart-canvas-wrap {
-      position: relative;
-      height: 280px;
+    .meta-item { display: flex; flex-direction: column; gap: 4px; }
+    .meta-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .meta-value { font-size: 13px; color: var(--text); }
+    .meta-value.mono { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+    .meta-value.large { font-size: 18px; font-weight: 800; color: var(--azure); }
+    .status-badge {
+      display: inline-block; font-size: 12px; font-weight: 600;
+      padding: 2px 10px; border-radius: 99px; width: fit-content;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 20px; color: var(--muted); font-size: 11px;
+    }
+  </style>
+</head>
+<body>
     }
     .chart-canvas-wrap.pie-mode {
       height: 340px;
@@ -348,39 +349,36 @@
 </head>
 <body>
 
-<header>
-  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
-       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-  </svg>
-  <h1>Azure Sponsorship Monitor</h1>
-  {% if subscriptions and subscriptions|length > 1 %}
-  <a href="/overview"
-     style="margin-left:auto;color:rgba(255,255,255,.85);text-decoration:none;font-size:.88rem;font-weight:600;
-            padding:.4rem .9rem;border:1px solid rgba(255,255,255,.4);border-radius:5px;white-space:nowrap;">
-    ☁ Overview ({{ subscriptions|length }})
+<nav class="navbar">
+  <a href="/" class="logo">
+    <svg width="28" height="28" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+      <rect width="180" height="180" rx="40" fill="rgba(255,255,255,0.2)"/>
+      <rect x="26" y="116" width="26" height="42" rx="4" fill="white" opacity="0.4"/>
+      <rect x="60" y="90" width="26" height="68" rx="4" fill="white" opacity="0.65"/>
+      <rect x="94" y="68" width="26" height="90" rx="4" fill="white" opacity="0.85"/>
+      <rect x="128" y="46" width="26" height="112" rx="4" fill="white"/>
+      <path d="M26 80 Q60 52 94 44 Q128 36 154 28" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.75"/>
+      <circle cx="154" cy="28" r="5" fill="white"/>
+    </svg>
+    <span class="brand">Azure Sponsorship Monitor</span>
   </a>
-  {% endif %}
+  <div class="nav-links">
+    <a href="/overview">☁ Overview ({{ subscriptions|length }})</a>
+    <a href="/detail" class="active">Detalle</a>
+  </div>
   {% if current_user.authenticated %}
-  <div style="display:flex;align-items:center;gap:8px;margin-left:{% if not (subscriptions and subscriptions|length > 1) %}auto{% else %}12px{% endif %};">
-    <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.25);
-                display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600;color:#fff;">
-      {{ current_user.name[:1].upper() if current_user.name else '?' }}
+  <div class="user-info">
+    <div class="avatar">{{ current_user.name[:1].upper() if current_user.name else '?' }}</div>
+    <div>
+      <div class="user-name">{{ current_user.name }}</div>
+      <div class="user-email">{{ current_user.email }}</div>
     </div>
-    <div style="display:flex;flex-direction:column;">
-      <span style="font-size:.8rem;font-weight:600;color:#fff;line-height:1.1;">{{ current_user.name }}</span>
-      <span style="font-size:.7rem;color:rgba(255,255,255,.7);line-height:1.1;">{{ current_user.email }}</span>
-    </div>
-    <a href="/logout" style="color:rgba(255,255,255,.6);font-size:.75rem;text-decoration:none;margin-left:4px;
-       padding:3px 8px;border:1px solid rgba(255,255,255,.3);border-radius:4px;">Salir</a>
+    <a href="/logout" class="logout-btn">Salir</a>
   </div>
   {% elif sso_enabled %}
-  <a href="/login" style="margin-left:auto;color:rgba(255,255,255,.85);text-decoration:none;font-size:.85rem;
-     font-weight:600;padding:.4rem .9rem;border:1px solid rgba(255,255,255,.4);border-radius:5px;">
-    Iniciar sesión
-  </a>
+  <a href="/login" class="login-btn" style="margin-left:auto;">Iniciar sesión</a>
   {% endif %}
-</header>
+</nav>
 
 <!-- Loading overlay -->
 <div class="loading-overlay" id="loadingOverlay">
@@ -391,25 +389,18 @@
 <main>
   <!-- Subscription selector -->
   {% if subscriptions and subscriptions|length > 1 %}
-  <div style="background:#e8f4ff;border:1px solid #90caf9;border-radius:8px;padding:12px 20px;
-              margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-    <span style="font-size:.75rem;font-weight:700;color:#005a9e;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">
-      Suscripción
-    </span>
-    <select onchange="switchSub(this.value)"
-      style="border:1px solid #90caf9;border-radius:5px;padding:6px 10px;font-size:.9rem;
-             background:#fff;color:#1a1a2e;min-width:280px;max-width:480px;">
+  <div class="sub-selector-bar">
+    <span class="sub-selector-label">Suscripción</span>
+    <select class="sub-selector-select" onchange="switchSub(this.value)">
       {% for sub in subscriptions %}
       <option value="{{ sub.id }}" {% if sub.id == active_sub.id %}selected{% endif %}>
         {{ sub.name }}{% if sub.tags %} · {{ sub.tags|join(', ') }}{% endif %}
       </option>
       {% endfor %}
     </select>
-    <span style="font-size:.78rem;color:#6b7280;font-family:monospace;">{{ active_sub.id }}</span>
+    <span class="sub-selector-id">{{ active_sub.id }}</span>
     {% if active_sub.budget %}
-    <span style="font-size:.8rem;font-weight:600;color:#005a9e;margin-left:auto;">
-      Budget: {{ currency|currency_symbol }}{{ active_sub.budget | int | string }}
-    </span>
+    <span class="sub-selector-budget">Budget: {{ currency|currency_symbol }}{{ active_sub.budget | int }}</span>
     {% endif %}
   </div>
   <script>
@@ -425,94 +416,50 @@
 
   <!-- Sub metadata panel -->
   {% if sub_details and (sub_details.status or sub_details.quota_id or sub_details.account_admin) %}
-  <div style="background:#fff;border:1px solid #e1e4e8;border-radius:8px;padding:14px 20px;
-              margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
-
+  <div class="meta-panel">
     {% if sub_details.status %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Status</span>
-      <span style="font-size:13px;font-weight:600;padding:2px 10px;border-radius:99px;width:fit-content;
-        {% if sub_details.status == 'Active' %}background:#d4edda;color:#155724;
-        {% elif sub_details.status == 'Warned' %}background:#fff3cd;color:#856404;
-        {% else %}background:#f8d7da;color:#721c24;{% endif %}">
-        {{ sub_details.status }}
-      </span>
+    <div class="meta-item">
+      <span class="meta-label">Status</span>
+      <span class="status-badge {% if sub_details.status == 'Active' %}style="background:#d4edda;color:#155724;"{% elif sub_details.status == 'Warned' %}style="background:#fff3cd;color:#856404;"{% else %}style="background:#f8d7da;color:#721c24;"{% endif %}">{{ sub_details.status }}</span>
     </div>
     {% endif %}
-
     {% if sub_details.currency %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Currency</span>
-      <span style="font-size:18px;font-weight:800;color:#0078d4;">{{ sub_details.currency }}</span>
+    <div class="meta-item">
+      <span class="meta-label">Currency</span>
+      <span class="meta-value large">{{ sub_details.currency }}</span>
     </div>
     {% endif %}
-
     {% if sub_details.offer_name or sub_details.quota_id %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Offer</span>
-      <span style="font-size:13px;color:#1a1a2e;">{{ sub_details.offer_name or '' }}</span>
-      {% if sub_details.quota_id %}
-      <span style="font-size:11px;font-family:monospace;color:#888;">{{ sub_details.quota_id }}</span>
-      {% endif %}
+    <div class="meta-item">
+      <span class="meta-label">Offer</span>
+      <span class="meta-value">{{ sub_details.offer_name or '' }}</span>
+      {% if sub_details.quota_id %}<span class="meta-value mono">{{ sub_details.quota_id }}</span>{% endif %}
     </div>
     {% endif %}
-
     {% if sub_details.spending_limit %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Spending Limit</span>
-      <span style="font-size:14px;font-weight:700;
-        color:{% if sub_details.spending_limit == 'Off' %}#107c10{% else %}#ff8c00{% endif %};">
-        {{ sub_details.spending_limit }}
-      </span>
+    <div class="meta-item">
+      <span class="meta-label">Spending Limit</span>
+      <span class="meta-value" style="font-weight:700;color:{% if sub_details.spending_limit == 'Off' %}var(--green){% else %}var(--amber){% endif %};">{{ sub_details.spending_limit }}</span>
     </div>
     {% endif %}
-
     {% if sub_details.billing_period %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Current Billing Period</span>
-      <span style="font-size:12px;font-family:monospace;color:#1a1a2e;">{{ sub_details.billing_period }}</span>
+    <div class="meta-item">
+      <span class="meta-label">Billing Period</span>
+      <span class="meta-value mono">{{ sub_details.billing_period }}</span>
     </div>
     {% endif %}
-
-    {% if sub_details.purchase_date %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Purchase Date</span>
-      <span style="font-size:12px;color:#1a1a2e;">{{ sub_details.purchase_date }}</span>
-    </div>
-    {% endif %}
-
     {% if sub_details.account_admin %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Account Admin</span>
-      <span style="font-size:12px;color:#1a1a2e;word-break:break-all;">{{ sub_details.account_admin }}</span>
+    <div class="meta-item">
+      <span class="meta-label">Account Admin</span>
+      <span class="meta-value" style="word-break:break-all;font-size:12px;">{{ sub_details.account_admin }}</span>
     </div>
     {% endif %}
-
-    {% if sub_details.billing_account_id %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Billing Account ID</span>
-      <span style="font-size:11px;font-family:monospace;color:#888;">{{ sub_details.billing_account_id }}</span>
-    </div>
-    {% endif %}
-
     {% if sub_details.tenant_id %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Tenant ID</span>
-      <span style="font-size:11px;font-family:monospace;color:#888;">{{ sub_details.tenant_id }}</span>
+    <div class="meta-item">
+      <span class="meta-label">Tenant ID</span>
+      <span class="meta-value mono">{{ sub_details.tenant_id }}</span>
     </div>
     {% endif %}
-
-    {% if sub_details.azure_tags %}
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Azure Tags</span>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;">
-        {% for k, v in sub_details.azure_tags.items() %}
-        <span style="background:#f0f2f5;color:#555;padding:2px 7px;border-radius:4px;font-size:11px;">{{ k }}: {{ v }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
   </div>
   {% endif %}
 
@@ -546,11 +493,11 @@
   </form>
 
   {% if error %}
-  <div class="alert">&#9888;&#65039; {{ error }}</div>
+  <div class="alert">⚠ {{ error }}</div>
   {% endif %}
 
   {% if rate_card_warning %}
-  <div class="alert" style="background:#fff8e1;border-left-color:#f9a825;">&#9888;&#65039; {{ rate_card_warning }}</div>
+  <div class="alert warn">⚠ {{ rate_card_warning }}</div>
   {% endif %}
 
   <!-- Grand total cost -->
@@ -566,7 +513,19 @@
         <div class="amount">{{ currency|currency_symbol }}{{ "%.2f"|format(average_daily_cost) }}</div>
       </div>
     </div>
-    <div class="note">Based on RateCard rates for {{ start }} &ndash; {{ end }}</div>
+    <div class="note">Real data: {{ start }} – {{ end }}
+      {% if projected_days %} · +{{ projected_days|length }} days projected{% endif %}
+    </div>
+
+    {% if projected_days %}
+    <div class="proj-banner">
+      <div>
+        <div class="proj-amount">≈ {{ currency|currency_symbol }}{{ "%.2f"|format(projected_grand_total) }}</div>
+        <div class="proj-label">Projected total including today (+{{ projected_days|length }} estimated days)</div>
+      </div>
+      <div class="proj-rate">{{ currency|currency_symbol }}{{ "%.2f"|format(projected_cost_per_day) }}/day (last known)</div>
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 
@@ -1160,6 +1119,10 @@
   /* ── cost chart ── */
   (function () {
     var chartLabels = {{ chart_labels | tojson }};
+    var projectedDays    = {{ projected_days | tojson }};
+    var projectedCostDay = {{ projected_cost_per_day | round(4) }};
+    var allLabels = chartLabels.concat(projectedDays);
+
     var viewChartData = {
       services: {
         series: {{ svc_chart_series | tojson }},
@@ -1170,7 +1133,7 @@
         order: {{ ai_meter_order | tojson }}
       }
     };
-    if (!chartLabels || !chartLabels.length) return;
+    if (!allLabels || !allLabels.length) return;
 
     var PALETTE = [
       '#0078d4', '#50e6ff', '#008272', '#bad80a', '#ffb900',
@@ -1219,7 +1182,7 @@
 
       if (!hasFilter) {
         var vd = viewChartData[currentView] || viewChartData.services;
-        return { series: vd.series, order: vd.order, labels: chartLabels };
+        return { series: vd.series, order: vd.order, labels: allLabels };
       }
 
       /* Aggregate cost per meter per day from visible table rows */
@@ -1269,25 +1232,46 @@
       var sets = top.map(function (m, i) {
         return {
           label: m,
-          data: chartSeries[m] || labels.map(function () { return 0; }),
-          backgroundColor: PALETTE[i % PALETTE.length],
+          data: labels.map(function(d) {
+            return (chartSeries[m] || {})[d] || 0;
+          }),
+          backgroundColor: labels.map(function(d) {
+            return projectedDays.indexOf(d) >= 0
+              ? 'rgba(255,140,0,0.65)'
+              : PALETTE[i % PALETTE.length];
+          }),
           stack: 'cost'
         };
       });
       if (rest.length > 0) {
-        var othersData = labels.map(function (_, di) {
+        var othersData = labels.map(function (d) {
           return rest.reduce(function (s, m) {
-            return s + ((chartSeries[m] || [])[di] || 0);
+            return s + ((chartSeries[m] || {})[d] || 0);
           }, 0);
         });
         if (othersData.some(function (v) { return v > 0; })) {
           sets.push({
             label: 'Others (' + rest.length + ')',
             data: othersData,
-            backgroundColor: OTHERS_COLOR,
+            backgroundColor: labels.map(function(d) {
+              return projectedDays.indexOf(d) >= 0 ? 'rgba(255,140,0,0.45)' : OTHERS_COLOR;
+            }),
             stack: 'cost'
           });
         }
+      }
+      // Projected bars dataset
+      if (projectedDays.length > 0) {
+        sets.push({
+          label: '≈ Projected',
+          data: labels.map(function(d) {
+            return projectedDays.indexOf(d) >= 0 ? projectedCostDay : 0;
+          }),
+          backgroundColor: 'rgba(255,140,0,0.65)',
+          borderColor: 'rgba(255,140,0,1)',
+          borderWidth: 1,
+          stack: 'cost'
+        });
       }
       return { datasets: sets, labels: labels };
     }
@@ -1426,6 +1410,14 @@
     renderCostChart();
   })();
 </script>
+
+<footer>
+  Azure Sponsorship Monitor
+  {% if app_version and app_version != 'dev' %}· v{{ app_version[:7] }}{% endif %}
+  {% if build_date %}· Built {{ build_date[:10] }}{% endif %}
+  · Data up to {{ end }}
+  <span style="color:var(--amber);" title="Azure Usage API has 1-2 days delay">⚠ 1-2 day API delay</span>
+</footer>
 
 </body>
 </html>

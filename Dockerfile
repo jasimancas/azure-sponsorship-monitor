@@ -2,6 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+ARG APP_VERSION=dev
+ARG BUILD_DATE=
+ENV APP_VERSION=$APP_VERSION
+ENV BUILD_DATE=$BUILD_DATE
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
