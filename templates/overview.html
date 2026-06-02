@@ -237,18 +237,6 @@
   .empty-state { text-align: center; padding: 60px; color: var(--muted); }
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
 
-  /* Conditional helpers (evita Jinja dentro de style) */
-  .kpi-value.kpi-has-errors { color: var(--red); }
-  .kpi-value.kpi-no-errors { color: var(--green); }
-  .state-tags-col { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-  .state-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
-  .state-enabled { background: #d4edda; color: #155724; }
-  .state-warned { background: #fff3cd; color: #856404; }
-  .state-other { background: #f8d7da; color: #721c24; }
-  .spend-limit { font-weight: 600; }
-  .spend-off { color: var(--green); }
-  .spend-on { color: var(--amber); }
-
 footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -286,17 +274,17 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
   <!-- ── Controls ── -->
   <div class="controls">
     <div class="ctrl-group">
-      <label for="start-date">Desde</label>
-      <input id="start-date" type="text" value="{{ start }}" disabled style="color:var(--muted);background:#f9f9f9;">
+      <label>Desde</label>
+      <input type="text" value="{{ start }}" disabled style="color:var(--muted);background:#f9f9f9;">
     </div>
     <div class="ctrl-group">
-      <label for="end-date">Hasta</label>
-      <input id="end-date" type="text" value="{{ end or 'cargando...' }}" disabled style="color:var(--muted);background:#f9f9f9;">
+      <label>Hasta</label>
+      <input type="text" value="{{ end or 'cargando...' }}" disabled style="color:var(--muted);background:#f9f9f9;">
     </div>
     {% if all_tags %}
     <div class="ctrl-group">
-      <label for="tag-filter">Filtrar por tag</label>
-      <select id="tag-filter" name="tag" onchange="location.href='/overview?tag='+encodeURIComponent(this.value)">
+      <label>Filtrar por tag</label>
+      <select name="tag" onchange="location.href='/overview?tag='+this.value">
         <option value="">Todas las suscripciones</option>
         {% for t in all_tags %}
         <option value="{{ t }}" {% if t == tag_filter %}selected{% endif %}>{{ t }}</option>
@@ -335,7 +323,7 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
 
   {% if not fetched and not error %}
   <div class="alert alert-info">
-    Selecciona un rango de fechas y pulsa <strong>Actualizar ahora</strong> para cargar todas las suscripciones en paralelo.
+    Selecciona un rango de fechas y pulsa <strong>Actualizar todo</strong> para cargar todas las suscripciones en paralelo.
     {% if subscriptions %}
     Tienes <strong>{{ subscriptions | length }}</strong> suscripciones configuradas.
     {% endif %}
@@ -363,7 +351,7 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
     </div>
     <div class="kpi-card">
       <span class="kpi-label">Con errores</span>
-      <span class="kpi-value {% if sub_summaries | selectattr('error') | list | length > 0 %}kpi-has-errors{% else %}kpi-no-errors{% endif %}">
+      <span class="kpi-value" style="color:{% if sub_summaries | selectattr('error') | list | length > 0 %}var(--red){% else %}var(--green){% endif %}">
         {{ sub_summaries | selectattr('error') | list | length }}
       </span>
       <span class="kpi-sub">suscripciones no accesibles</span>
@@ -395,11 +383,14 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
           <div class="sub-name">{{ s.name }}</div>
           <div class="sub-id">{{ s.id }}</div>
         </div>
-        <div class="state-tags-col">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
           <!-- Estado -->
           {% set state = s.get('state', '') %}
           {% if state %}
-          <span class="state-badge {% if state == 'Enabled' %}state-enabled{% elif state == 'Warned' %}state-warned{% else %}state-other{% endif %}">
+          <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;
+            {% if state == 'Enabled' %}background:#d4edda;color:#155724;
+            {% elif state == 'Warned' %}background:#fff3cd;color:#856404;
+            {% else %}background:#f8d7da;color:#721c24;{% endif %}">
             {{ state }}
           </span>
           {% endif %}
@@ -451,7 +442,7 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
           </div>
           <div class="progress-bg">
             <div class="progress-fill {% if s.budget_pct < 75 %}pct-ok{% elif s.budget_pct < 95 %}pct-warn{% else %}pct-over{% endif %}"
-                 data-width="{{ [s.budget_pct, 100] | min }}"></div>
+                 style="width: {{ [s.budget_pct, 100] | min }}%"></div>
           </div>
         </div>
         {% endif %}
@@ -499,7 +490,7 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
           {% if s.get('spending_limit') %}
           <div style="display:flex;justify-content:space-between;font-size:11px;">
             <span style="color:var(--muted);font-weight:600;">SPENDING LIMIT</span>
-            <span class="spend-limit {% if s.spending_limit == 'Off' %}spend-off{% else %}spend-on{% endif %}">
+            <span style="color:{% if s.spending_limit == 'Off' %}var(--green){% else %}var(--amber){% endif %};font-weight:600;">
               {{ s.spending_limit }}
             </span>
           </div>
@@ -531,11 +522,7 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
         </div>
 
       </div>
-      <a href="/detail?sub={{ s.id }}"
-         class="drilldown-link"
-         data-sub="{{ s.id }}"
-         data-start="{{ start or '' }}"
-         data-end="{{ end or '' }}">
+      <a href="/detail?sub={{ s.id }}&start={{ start }}&end={{ end }}&refresh=true" class="drilldown-link">
         Ver detalle completo →
       </a>
       {% endif %}
@@ -555,147 +542,101 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
   Azure Sponsorship Monitor
   {% if app_version and app_version != 'dev' %}· v{{ app_version[:7] }}{% endif %}
   {% if build_date %}· Built {{ build_date[:10] }}{% endif %}
-  · <span style="color:var(--amber);" title="Azure Usage API has 2-3 days delay">⚠ Data with 2-3 day API delay</span>
+  · <span style="color:var(--amber);" title="Azure Usage API has 1-2 days delay">⚠ Data with 1-2 day API delay</span>
 </footer>
 
-{% set mini_entries = [] %}
-{% if fetched and sub_summaries %}
+<script>
+{% if fetched and subs_with_data %}
+// ── Comparison bar chart ──
+(function() {
+  const labels = {{ sub_summaries | map(attribute='name') | list | tojson }};
+  const totals = {{ sub_summaries | map(attribute='total') | list | tojson }};
+  const colors = totals.map((_, i) => `hsl(${(i * 47) % 360}, 65%, 50%)`);
+
+  new Chart(document.getElementById('compChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Coste total ({{ currency|currency_symbol }})',
+        data: totals,
+        backgroundColor: colors,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ── Mini sparklines ──
 {% for s in sub_summaries %}
 {% if not s.error and s.all_dates %}
-{% set _ = mini_entries.append({
-  'index': loop.index,
-  'dates': s.all_dates,
-  'totals': [s.daily_totals.get(d, 0) | round(4) for d in s.all_dates],
-  'projected_days': s.get('projected_days') or [],
-  'projected_cost_per_day': (s.get('projected_cost_per_day') or 0) | round(4)
-}) %}
+(function() {
+  const dates  = {{ s.all_dates | tojson }};
+  const totals = [{% for d in s.all_dates %}{{ s.daily_totals.get(d, 0) | round(4) }}{% if not loop.last %},{% endif %}{% endfor %}];
+  {% if s.get('projected_days') %}
+  const projDates  = {{ s.projected_days | tojson }};
+  const projVal    = {{ s.projected_cost_per_day | round(4) }};
+  const allLabels  = dates.concat(projDates);
+  const allData    = totals.concat(projDates.map(() => projVal));
+  const bgColors   = dates.map(() => 'rgba(0,120,212,0.55)').concat(projDates.map(() => 'rgba(255,140,0,0.65)'));
+  {% else %}
+  const allLabels = dates;
+  const allData   = totals;
+  const bgColors  = dates.map(() => 'rgba(0,120,212,0.55)');
+  {% endif %}
+  new Chart(document.getElementById('mini_{{ loop.index }}'), {
+    type: 'bar',
+    data: {
+      labels: allLabels,
+      datasets: [{
+        data: allData,
+        backgroundColor: bgColors,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => (ctx.dataIndex >= dates.length ? '≈ ' : '') + '{{ currency|currency_symbol }}' + ctx.parsed.y.toFixed(2)
+      }}},
+      scales: {
+        x: { display: false },
+        y: { display: false, beginAtZero: true }
+      }
+    }
+  });
+})();
 {% endif %}
 {% endfor %}
 {% endif %}
-<script id="overviewData" type="application/json">
-  {{ {
-    "fetched": fetched,
-    "loading": loading,
-    "currency_symbol": currency | currency_symbol,
-    "comparison": {
-      "labels": (sub_summaries | rejectattr('error') | list | map(attribute='name') | list) if (fetched and sub_summaries) else [],
-      "totals": (sub_summaries | rejectattr('error') | list | map(attribute='total') | list) if (fetched and sub_summaries) else []
-    },
-    "minis": mini_entries
-  } | tojson }}
 </script>
 <script>
-(function () {
-  var node = document.getElementById('overviewData');
-  if (!node) return;
-  var data;
-  try { data = JSON.parse(node.textContent || '{}'); } catch (e) { return; }
-  var currencySymbol = data.currency_symbol || '';
-
-  // ── Comparison bar chart ──
-  var comp = data.comparison || { labels: [], totals: [] };
-  var compEl = document.getElementById('compChart');
-  if (compEl && comp.labels && comp.labels.length) {
-    var colors = comp.totals.map(function (_, i) { return 'hsl(' + ((i * 47) % 360) + ', 65%, 50%)'; });
-    new Chart(compEl, {
-      type: 'bar',
-      data: {
-        labels: comp.labels,
-        datasets: [{
-          label: 'Coste total (' + currencySymbol + ')',
-          data: comp.totals,
-          backgroundColor: colors,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
-          x: { grid: { display: false } }
-        }
-      }
-    });
-  }
-
-  // ── Mini sparklines ──
-  (data.minis || []).forEach(function (m) {
-    var el = document.getElementById('mini_' + m.index);
-    if (!el) return;
-    var dates = m.dates || [];
-    var totals = m.totals || [];
-    var projDates = m.projected_days || [];
-    var projVal = m.projected_cost_per_day || 0;
-    var allLabels = dates.concat(projDates);
-    var allData = totals.concat(projDates.map(function () { return projVal; }));
-    var bgColors = dates.map(function () { return 'rgba(0,120,212,0.55)'; })
-      .concat(projDates.map(function () { return 'rgba(255,140,0,0.65)'; }));
-    new Chart(el, {
-      type: 'bar',
-      data: { labels: allLabels, datasets: [{ data: allData, backgroundColor: bgColors, borderRadius: 3 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function (ctx) {
-                return (ctx.dataIndex >= dates.length ? '≈ ' : '') + currencySymbol + ctx.parsed.y.toFixed(2);
-              }
-            }
-          }
-        },
-        scales: { x: { display: false }, y: { display: false, beginAtZero: true } }
-      }
-    });
-  });
-
-  // ── Budget bar widths ──
-  document.querySelectorAll('.progress-fill[data-width]').forEach(function (bar) {
-    var w = parseFloat(bar.getAttribute('data-width'));
-    bar.style.width = (isNaN(w) ? 0 : w) + '%';
-  });
-
-  // ── Drill-down links ──
-  document.querySelectorAll('.drilldown-link[data-sub]').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      var sub = link.getAttribute('data-sub') || '';
-      var start = link.getAttribute('data-start') || '';
-      var end = link.getAttribute('data-end') || '';
-      location.href = '/detail?sub=' + encodeURIComponent(sub) +
-        '&start=' + encodeURIComponent(start) +
-        '&end=' + encodeURIComponent(end) + '&refresh=true';
-    });
-  });
-})();
-</script>
-<script>
+{% if loading or not fetched %}
 (function() {
-  var node = document.getElementById('overviewData');
-  if (!node) return;
-  var data;
-  try { data = JSON.parse(node.textContent || '{}'); } catch (e) { return; }
-  // Solo hacer polling mientras se está cargando o aún no hay datos
-  if (!data.loading && data.fetched) return;
-
-  var POLL_INTERVAL = 3000;  // comprobar cada 3 segundos
-  var wasLoading = !!data.loading;
+  const POLL_INTERVAL = 3000;  // comprobar cada 3 segundos
+  let wasLoading = {{ 'true' if loading else 'false' }};
 
   function checkStatus() {
     fetch('/api/cache-status')
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (wasLoading && !d.loading && d.has_data) {
+      .then(r => r.json())
+      .then(data => {
+        if (wasLoading && !data.loading && data.has_data) {
           // El fetch terminó y hay datos — recargar la página
           window.location.reload();
-        } else if (d.loading || !d.has_data) {
+        } else if (data.loading || !data.has_data) {
           wasLoading = true;
           setTimeout(checkStatus, POLL_INTERVAL);
         }
       })
-      .catch(function () {
+      .catch(() => {
         // Error de red — seguir intentando
         setTimeout(checkStatus, POLL_INTERVAL * 2);
       });
@@ -704,6 +645,7 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
   // Arrancar el polling
   setTimeout(checkStatus, POLL_INTERVAL);
 })();
+{% endif %}
 </script>
 </body>
 </html>
