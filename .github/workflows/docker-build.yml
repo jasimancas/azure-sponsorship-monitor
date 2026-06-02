@@ -54,3 +54,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha       # caché de capas entre builds (mucho más rápido)
           cache-to: type=gha,mode=max
+
+      - name: Notificar a Azure App Service
+        if: github.ref == 'refs/heads/main'
+        run: |
+          curl -s -X POST "${{ secrets.AZURE_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            --max-time 30
+          echo "Azure notificado — desplegando nueva imagen"
