@@ -769,30 +769,47 @@ def process_records(records: list[dict], rate_map: dict, period_days: int) -> di
             cache_efficiency[model] = cache_hits[model] / total_in
 
     # ── Proyección para días sin datos (entre último día real y hoy) ─────────
-    today_str     = _today().strftime("%Y-%m-%d")
+    today_str      = _today().strftime("%Y-%m-%d")
     projected_days: list[str]  = []
     projected_cost_per_day = 0.0
     projected_total = 0.0
 
     if chart_labels_list:
-        last_real_day = chart_labels_list[-1]
-
-        # Coste del último día disponible como base de proyección
-        last_day_totals = {}
-        for svc, daily in svc_chart_daily.items():
-            last_day_totals[svc] = daily.get(last_real_day, 0.0)
-        projected_cost_per_day = sum(last_day_totals.values())
-
-        # Generar días proyectados entre el último real y hoy (exclusive)
         from datetime import date
-        last_date  = date.fromisoformat(last_real_day)
-        today_date = date.fromisoformat(today_str)
-        delta = (today_date - last_date).days
+        last_real_day  = chart_labels_list[-1]
+        last_date      = date.fromisoformat(last_real_day)
+        today_date     = date.fromisoformat(today_str)
+        gap_days       = (today_date - last_date).days
 
-        for i in range(1, delta + 1):
-            proj_day = (last_date + timedelta(days=i)).isoformat()
-            projected_days.append(proj_day)
-            projected_total += projected_cost_per_day
+        # Solo proyectar si el gap es razonable (≤4 días = retraso normal de la API)
+        # Si el gap es mayor, los datos están incompletos y no proyectamos
+        if 0 < gap_days <= 3:
+            # Media de los últimos 7 días con datos para suavizar picos
+            recent_labels = chart_labels_list[-7:]
+            daily_sums = []
+            for d in recent_labels:
+                day_total = sum(
+                    (svc_chart_daily.get(svc, {}).get(d, 0.0))
+                    for svc in svc_chart_daily
+                )
+                if day_total > 0:
+                    daily_sums.append(day_total)
+
+            if daily_sums:
+                projected_cost_per_day = sum(daily_sums) / len(daily_sums)
+
+            for i in range(1, gap_days + 1):
+                proj_day = (last_date + timedelta(days=i)).isoformat()
+                projected_days.append(proj_day)
+                projected_total += projected_cost_per_day
+
+        elif gap_days > 3:
+            # Más de 3 días sin datos = sin gasto real, proyección $0
+            projected_cost_per_day = 0.0
+            for i in range(1, gap_days + 1):
+                proj_day = (last_date + timedelta(days=i)).isoformat()
+                projected_days.append(proj_day)
+            projected_total = 0.0
 
     projected_grand_total = grand_total_cost + projected_total
 
@@ -1120,6 +1137,8 @@ def detail():
         brsdt_rate_labels=_BRSDT_RATE_LABELS,
         brsdt_other_rates=_BRSDT_OTHER_RATES,
         brsdt_unmatched_rates=[],
+        projected_days=[], projected_cost_per_day=0.0,
+        projected_total=0.0, projected_grand_total=0.0,
     )
 
     try:
