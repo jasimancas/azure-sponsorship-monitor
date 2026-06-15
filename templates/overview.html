@@ -453,7 +453,6 @@ footer { text-align: center; padding: 24px; color: var(--muted); font-size: 12px
             <div class="cost-main">{{ currency|currency_symbol }} {{ s.total | format_cost }}</div>
             <div class="cost-label">Coste real del período</div>
           </div>
-          <div class="cost-avg">~{{ currency|currency_symbol }} {{ s.avg_daily | format_cost }}/día</div>
         </div>
 
         {% if s.get('projected_days') %}
